@@ -1,7 +1,9 @@
 package vn.iotstar.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import vn.iotstar.entity.User;
-
+import vn.iotstar.entity.*;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.stereotype.Repository;
+@Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    User findByEmail(String email);
 }

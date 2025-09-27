@@ -1,16 +1,19 @@
 package vn.iotstar.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
-import java.util.List;
+import java.util.*;
 
 @Entity
-@Table(name = "category")
-@Data
+@Table(name = "Category")
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Category {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -19,5 +22,13 @@ public class Category {
     private String images;
 
     @ManyToMany(mappedBy = "categories")
-    private List<Product> products;
+    private Set<User> users = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "ProductCategory",
+        joinColumns = @JoinColumn(name = "category_id"),
+        inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    private Set<Product> products = new HashSet<>();
 }

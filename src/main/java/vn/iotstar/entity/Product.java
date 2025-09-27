@@ -1,38 +1,39 @@
 package vn.iotstar.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
 
 @Entity
-@Table(name = "product")
-@Data
+@Table(name = "Product")
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
-    private int quantity;
+    private Integer quantity;
 
-    private String description;
+    @Column(name = "[desc]") 
+    private String desc;
 
-    @Column(nullable = false)
-    private float price;
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal price;
+
+    private String image;
 
     @ManyToOne
     @JoinColumn(name = "userid", nullable = false)
     private User user;
 
-    @ManyToMany
-    @JoinTable(
-        name = "category_product",
-        joinColumns = @JoinColumn(name = "product_id"),
-        inverseJoinColumns = @JoinColumn(name = "category_id")
-    )
-    private List<Category> categories;
+    @ManyToMany(mappedBy = "products")
+    private Set<Category> categories = new HashSet<>();
 }
