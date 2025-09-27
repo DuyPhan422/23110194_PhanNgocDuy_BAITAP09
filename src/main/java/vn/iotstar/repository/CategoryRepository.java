@@ -1,8 +1,7 @@
 package vn.iotstar.repository;
 
-import vn.iotstar.entity.*;
-import org.springframework.data.jpa.repository.*;
-import org.springframework.stereotype.Repository;
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+import vn.iotstar.entity.Category;
+
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 }

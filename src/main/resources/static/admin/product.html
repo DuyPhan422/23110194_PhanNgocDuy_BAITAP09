@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GraphQL Product Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 1200px; } /* Wider container for more columns */
+        .card-title { margin-bottom: 1.5rem; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<div class="container my-5">
+    <h1 class="text-center mb-4">GraphQL Product Management</h1>
+
+    <!-- Create / Update Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">Create / Update Product</h2>
+            <input type="hidden" id="productId">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="title" class="form-label">Title:</label>
+                    <input type="text" class="form-control" id="title" placeholder="Enter product title">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="quantity" class="form-label">Quantity:</label>
+                    <input type="number" class="form-control" id="quantity" placeholder="e.g., 100">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="price" class="form-label">Price:</label>
+                    <input type="number" step="0.01" class="form-control" id="price" placeholder="e.g., 99.99">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="desc" class="form-label">Description:</label>
+                <textarea id="desc" class="form-control" placeholder="Enter description"></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="userId" class="form-label">User:</label>
+                    <select id="userId" class="form-select"></select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="categoryId" class="form-label">Category:</label>
+                    <select id="categoryId" class="form-select"></select>
+                </div>
+            </div>
+            <button onclick="saveProduct()" class="btn btn-primary">Save Product</button>
+            <button onclick="clearForm()" class="btn btn-secondary">Clear Form</button>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card">
+        <div class="card-body">
+             <h2 class="card-title">All Products</h2>
+             <div class="table-responsive">
+                <table id="products-table" class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Category</th>
+                            <th>User</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Display -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="card-title">API Response</h2>
+            <pre id="result-display" class="bg-light p-3 rounded">GraphQL responses will be shown here.</pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    const resultDisplay = document.getElementById('result-display');
+    const GQL_URL = '/graphql';
+
+    async function graphqlQuery(query, variables = {}) {
+        const response = await fetch(GQL_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, variables })
+        });
+        return await response.json();
+    }
+
+    function displayResult(data) {
+        resultDisplay.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function renderTable(products) {
+        const tbody = document.querySelector("#products-table tbody");
+        tbody.innerHTML = "";
+        if (!products) return;
+        for (const product of products) {
+            // Use template literals and escape the stringified product for the onclick attribute
+            const productString = JSON.stringify(product).replace(/'/g, "\'");
+            const row = `<tr>
+                <td>${product.id}</td>
+                <td>${product.title}</td>
+                <td>${product.price}</td>
+                <td>${product.quantity}</td>
+                <td>${product.category.name}</td>
+                <td>${product.user.fullname}</td>
+                <td>
+                    <button class='btn btn-sm btn-warning' onclick='editProduct(${productString})'>Edit</button>
+                    <button class='btn btn-sm btn-danger' onclick='deleteProduct(${product.id})'>Delete</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        }
+    }
+
+    async function populateDropdowns() {
+        const query = `query { users { id fullname } categories { id name } }`;
+        const result = await graphqlQuery(query);
+        const users = result.data.users;
+        const categories = result.data.categories;
+
+        const userSelect = document.getElementById('userId');
+        userSelect.innerHTML = '<option value="">Select User</option>';
+        users.forEach(u => userSelect.innerHTML += `<option value="${u.id}">${u.fullname}</option>`);
+
+        const categorySelect = document.getElementById('categoryId');
+        categorySelect.innerHTML = '<option value="">Select Category</option>';
+        categories.forEach(c => categorySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+    }
+
+    async function getAllProducts() {
+        const query = `query { products { id title quantity price desc user { id fullname } category { id name } } }`;
+        try {
+            const result = await graphqlQuery(query);
+            // displayResult(result);
+            renderTable(result.data.products);
+        } catch (error) {
+            displayResult({ error: error.message });
+        }
+    }
+
+    async function saveProduct() {
+        const id = document.getElementById('productId').value;
+        const title = document.getElementById('title').value;
+        const quantity = parseInt(document.getElementById('quantity').value, 10);
+        const price = parseFloat(document.getElementById('price').value);
+        const desc = document.getElementById('desc').value;
+        const userId = document.getElementById('userId').value;
+        const categoryId = document.getElementById('categoryId').value;
+
+        if (!title || isNaN(quantity) || isNaN(price) || !userId || !categoryId) {
+            alert('All fields are required and must be valid.');
+            return;
+        }
+
+        const isUpdate = !!id;
+        let mutation, variables;
+
+        if (isUpdate) {
+            mutation = `mutation UpdateProduct($id: ID!, $title: String, $quantity: Int, $price: Float, $desc: String, $userId: ID, $categoryId: ID) {
+                updateProduct(id: $id, title: $title, quantity: $quantity, price: $price, desc: $desc, userId: $userId, categoryId: $categoryId) { id }
+            }`;
+            variables = { id, title, quantity, price, desc, userId, categoryId };
+        } else {
+            mutation = `mutation CreateProduct($title: String!, $quantity: Int!, $price: Float!, $desc: String, $userId: ID!, $categoryId: ID!) {
+                createProduct(title: $title, quantity: $quantity, price: $price, desc: $desc, userId: $userId, categoryId: $categoryId) { id }
+            }`;
+            variables = { title, quantity, price, desc, userId, categoryId };
+        }
+
+        try {
+            const result = await graphqlQuery(mutation, variables);
+            displayResult(result);
+            clearForm();
+            getAllProducts();
+        } catch (error) {
+            displayResult({ error: error.message });
+        }
+    }
+
+    async function deleteProduct(id) {
+        if (!confirm(`Are you sure you want to delete product with ID ${id}?`)) return;
+
+        const mutation = `mutation DeleteProduct($id: ID!) { deleteProduct(id: $id) }`;
+        try {
+            const result = await graphqlQuery(mutation, { id });
+            displayResult(result);
+            getAllProducts();
+        } catch (error) {
+            displayResult({ error: error.message });
+        }
+    }
+
+    function editProduct(product) {
+        document.getElementById('productId').value = product.id;
+        document.getElementById('title').value = product.title;
+        document.getElementById('quantity').value = product.quantity;
+        document.getElementById('price').value = product.price;
+        document.getElementById('desc').value = product.desc;
+        document.getElementById('userId').value = product.user.id;
+        document.getElementById('categoryId').value = product.category.id;
+        window.scrollTo(0, 0);
+    }
+
+    function clearForm() {
+        document.getElementById('productId').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('quantity').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('userId').value = '';
+        document.getElementById('categoryId').value = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        populateDropdowns();
+        getAllProducts();
+    });
+</script>
+
+</body>
+</html>

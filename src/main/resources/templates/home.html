@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<div layout:fragment="content" class="container text-center py-5">
+
+    <p class="lead">Quản lý danh mục, người dùng, sản phẩm</p>
+    <div class="d-grid gap-3 col-6 mx-auto mt-5">
+        <a href="/admin/category.html" class="btn btn-primary btn-lg p-3">Quản lý Categories</a>
+        <a href="/admin/user.html" class="btn btn-secondary btn-lg p-3">Quản lý Users</a>
+        <a href="/admin/product.html" class="btn btn-success btn-lg p-3">Quản lý Products</a>
+    </div>
+
+</div>
+</body>
+</html>
